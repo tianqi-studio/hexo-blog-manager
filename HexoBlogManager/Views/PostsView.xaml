@@ -1,0 +1,209 @@
+<UserControl x:Class="HexoBlogManager.Views.PostsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <!-- 表头：浅灰底、小字、下边框 -->
+        <Style x:Key="GridColumnHeader" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#F7F8FA"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontFamily" Value="{StaticResource Font.Ui}"/>
+            <Setter Property="Padding" Value="10,9"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 单元格：去掉默认边框和内边距 -->
+        <Style x:Key="GridCell" TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 单元格文字：过长时显示省略号，悬停可看完整内容 -->
+        <Style x:Key="CellText" TargetType="TextBlock">
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+            <Setter Property="ToolTipService.ShowDuration" Value="20000"/>
+        </Style>
+
+        <!-- 行：悬停浅蓝、选中蓝底 -->
+        <Style x:Key="GridRow" TargetType="DataGridRow">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F7FAFE"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource Brush.AccentSoft}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Brush.Window}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ==================== 页头 ==================== -->
+        <StackPanel Grid.Row="0" Margin="32,26,32,0">
+            <TextBlock Style="{StaticResource Text.PageTitle}" Text="文章管理"/>
+            <TextBlock Style="{StaticResource Text.PageDesc}"
+                       Text="读取 source/_posts 下的全部 Markdown 文章。双击任意一行可直接编辑。"/>
+        </StackPanel>
+
+        <!-- ==================== 工具栏 ==================== -->
+        <Grid Grid.Row="1" Margin="32,18,32,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 搜索框（叠加一个占位提示） -->
+            <Grid Grid.Column="0">
+                <TextBox x:Name="SearchBox" Style="{StaticResource Input}"
+                         TextChanged="SearchBox_TextChanged"/>
+                <TextBlock x:Name="SearchPlaceholder"
+                           Text="搜索标题、标签、分类…"
+                           FontSize="13"
+                           Foreground="{StaticResource Brush.TextTertiary}"
+                           Margin="12,0,0,0"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"/>
+            </Grid>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button x:Name="BtnNew" Style="{StaticResource Btn.Primary}"
+                        Content="新建文章" Click="BtnNew_Click"/>
+                <Button x:Name="BtnEdit" Style="{StaticResource Btn.Secondary}"
+                        Content="编辑" Margin="8,0,0,0" Click="BtnEdit_Click"/>
+                <Button x:Name="BtnDelete" Style="{StaticResource Btn.Secondary}"
+                        Content="删除" Margin="8,0,0,0"
+                        Foreground="{StaticResource Brush.Danger}" Click="BtnDelete_Click"/>
+                <Button x:Name="BtnRefresh" Style="{StaticResource Btn.Secondary}"
+                        Content="刷新" Margin="8,0,0,0" Click="BtnRefresh_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ==================== 文章表格 ==================== -->
+        <Border Grid.Row="2" Margin="32,0,32,0"
+                Background="White"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="1"
+                CornerRadius="8"
+                ClipToBounds="True">
+            <Grid>
+                <DataGrid x:Name="PostsGrid"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#F1F2F4"
+                          RowStyle="{StaticResource GridRow}"
+                          CellStyle="{StaticResource GridCell}"
+                          ColumnHeaderStyle="{StaticResource GridColumnHeader}"
+                          Background="White"
+                          BorderThickness="0"
+                          FocusVisualStyle="{x:Null}"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserResizeRows="False"
+                          CanUserReorderColumns="False"
+                          EnableRowVirtualization="True"
+                          MouseDoubleClick="PostsGrid_MouseDoubleClick">
+
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="标题" Binding="{Binding Title}"
+                                            Width="*" MinWidth="170"
+                                            ElementStyle="{StaticResource CellText}"/>
+                        <DataGridTextColumn Header="创建日期" Binding="{Binding DateDisplay}"
+                                            Width="96"
+                                            ElementStyle="{StaticResource CellText}"/>
+                        <DataGridTextColumn Header="更新日期" Binding="{Binding UpdatedDisplay}"
+                                            Width="96"
+                                            ElementStyle="{StaticResource CellText}"/>
+                        <DataGridTextColumn Header="标签" Binding="{Binding TagsDisplay}"
+                                            Width="132"
+                                            ElementStyle="{StaticResource CellText}"/>
+                        <DataGridTextColumn Header="分类" Binding="{Binding CategoriesDisplay}"
+                                            Width="96"
+                                            ElementStyle="{StaticResource CellText}"/>
+                        <DataGridTextColumn Header="置顶" Binding="{Binding TopDisplay}"
+                                            Width="50"
+                                            ElementStyle="{StaticResource CellText}"/>
+                        <DataGridTextColumn Header="评论" Binding="{Binding CommentsDisplay}"
+                                            Width="46"
+                                            ElementStyle="{StaticResource CellText}"/>
+                        <DataGridTextColumn Header="文件名" Binding="{Binding FileName}"
+                                            Width="158"
+                                            ElementStyle="{StaticResource CellText}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- 空状态 / 未连接提示 -->
+                <Border x:Name="EmptyPanel"
+                        Background="White"
+                        Visibility="Collapsed">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+                        <TextBlock x:Name="TxtEmptyIcon"
+                                   FontFamily="{StaticResource Font.Icon}"
+                                   FontSize="30"
+                                   Foreground="{StaticResource Brush.TextTertiary}"
+                                   HorizontalAlignment="Center"
+                                   Text="&#xE8A5;"/>
+                        <TextBlock x:Name="TxtEmpty"
+                                   Margin="0,14,0,0"
+                                   FontSize="13"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   LineHeight="22"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ==================== 底部状态 ==================== -->
+        <Grid Grid.Row="3" Margin="34,10,32,22">
+            <TextBlock x:Name="TxtCount" FontSize="11.5"
+                       Foreground="{StaticResource Brush.TextTertiary}"
+                       Text="—"/>
+            <TextBlock x:Name="TxtBusy" HorizontalAlignment="Right" FontSize="11.5"
+                       Foreground="{StaticResource Brush.Accent}"
+                       Text="正在读取…" Visibility="Collapsed"/>
+        </Grid>
+    </Grid>
+</UserControl>

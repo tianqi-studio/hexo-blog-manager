@@ -1,0 +1,17 @@
+# 忽略构建产物
+**/bin/
+**/obj/
+publish/
+*.user
+*.suo
+.vs/
+
+# 忽略工作区内部数据
+.workbuddy/
+
+# 根目录下的截图是开发时随手截的，正式图片在 docs/screenshots
+/*.png
+
+# 忽略临时文件
+*.log
+*.tmp

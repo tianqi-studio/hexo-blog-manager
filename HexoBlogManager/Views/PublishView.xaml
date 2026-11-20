@@ -1,0 +1,271 @@
+<UserControl x:Class="HexoBlogManager.Views.PublishView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <!-- 密码框：外观与全局 Input 样式保持一致 -->
+        <Style x:Key="SecretInput" TargetType="PasswordBox">
+            <Setter Property="FontFamily" Value="{StaticResource Font.Ui}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderStrong}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="CaretBrush" Value="{StaticResource Brush.TextPrimary}"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource Brush.Accent}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Brush.Accent}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource Brush.Soft}"/>
+                                <Setter Property="Foreground" Value="{StaticResource Brush.TextTertiary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 表单左侧标签：顶部对齐，和输入框第一行文字对齐 -->
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="0,9,0,0"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Brush.Window}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ==================== 页头 ==================== -->
+        <StackPanel Grid.Row="0" Margin="32,26,32,0">
+            <TextBlock Style="{StaticResource Text.PageTitle}" Text="发布到 GitHub Pages"/>
+            <TextBlock Style="{StaticResource Text.PageDesc}"
+                       Text="生成站点后自动推送到 GitHub 仓库，并帮你把 GitHub Pages 打开。不需要装 hexo-deployer-git。"/>
+        </StackPanel>
+
+        <!-- ==================== 配置卡 ==================== -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="32,16,32,0" Padding="18,16,18,14">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="92"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 仓库 + 分支 -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabel}" Text="仓库"/>
+                <Grid Grid.Row="0" Grid.Column="1" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox x:Name="TxtRepo" Grid.Column="0" Style="{StaticResource Input}"
+                             ToolTip="填写 用户名/仓库名，例如 octocat/octocat.github.io；也可以直接粘贴仓库网页地址"/>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                        <TextBlock Text="分支" Style="{StaticResource Text.Label}" Margin="0,0,8,0"/>
+                        <TextBox x:Name="TxtBranch" Style="{StaticResource Input}" Width="118"
+                                 ToolTip="GitHub Pages 的发布分支，默认 gh-pages"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- 提交信息 -->
+                <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource FieldLabel}" Text="提交信息"/>
+                <TextBox x:Name="TxtCommit" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"
+                         Style="{StaticResource Input}"
+                         ToolTip="支持 {date} 占位符，发布时会替换成当前时间"/>
+
+                <!-- Token -->
+                <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource FieldLabel}" Text="Access Token"/>
+                <Grid Grid.Row="2" Grid.Column="1" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <PasswordBox x:Name="PwdToken" Grid.Column="0" Style="{StaticResource SecretInput}"
+                                 ToolTip="Personal Access Token，勾选 repo 权限即可。只保存在本机，用 Windows 加密后存盘"/>
+
+                    <Button Grid.Column="1" Style="{StaticResource Btn.Ghost}" Margin="8,0,0,0"
+                            Content="去 GitHub 生成" Click="BtnGetToken_Click"/>
+                </Grid>
+
+                <!-- 选项 -->
+                <TextBlock Grid.Row="3" Grid.Column="0" Style="{StaticResource FieldLabel}" Text="选项"/>
+                <WrapPanel Grid.Row="3" Grid.Column="1" Margin="0,0,0,10" VerticalAlignment="Center">
+                    <CheckBox x:Name="ChkClean" Content="发布前清理缓存" FontSize="12.5"
+                              VerticalAlignment="Center"
+                              Foreground="{StaticResource Brush.TextPrimary}"
+                              ToolTip="先执行 hexo clean 再生成，避免旧的生成结果残留在 public 里"/>
+                    <CheckBox x:Name="ChkNoJekyll" Content="写入 .nojekyll" FontSize="12.5"
+                              Margin="22,0,0,0" VerticalAlignment="Center"
+                              Foreground="{StaticResource Brush.TextPrimary}"
+                              ToolTip="让 GitHub Pages 跳过 Jekyll 处理，避免下划线开头的文件被忽略"/>
+                    <CheckBox x:Name="ChkAutoPages" Content="自动开启 Pages" FontSize="12.5"
+                              Margin="22,0,0,0" VerticalAlignment="Center"
+                              Foreground="{StaticResource Brush.TextPrimary}"
+                              ToolTip="推送成功后调用 GitHub API，把 Pages 的发布分支设为上面的分支"/>
+                </WrapPanel>
+
+                <!-- 高级 -->
+                <Expander Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                          Header="高级选项（代理 / 自定义远程地址）"
+                          FontSize="12" Foreground="{StaticResource Brush.TextSecondary}"
+                          Margin="0,0,0,4">
+                    <Grid Margin="0,10,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="92"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabel}" Text="代理"/>
+                        <TextBox x:Name="TxtProxy" Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
+                                 Style="{StaticResource Input}"
+                                 ToolTip="形如 http://127.0.0.1:7890，留空则直连。国内访问 github.com 经常需要它"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource FieldLabel}" Text="远程地址"/>
+                        <TextBox x:Name="TxtRemote" Grid.Row="1" Grid.Column="1"
+                                 Style="{StaticResource Input}"
+                                 ToolTip="留空则按 https://github.com/用户名/仓库.git 生成。填了就以它为准（可用于自建 Git 或本地测试）"/>
+                    </Grid>
+                </Expander>
+
+                <!-- 状态 + 操作按钮 -->
+                <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse x:Name="StatusDot" Width="8" Height="8"
+                                 Fill="{StaticResource Brush.TextTertiary}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TxtStatus" Text="未发布" FontSize="12" Margin="8,0,0,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="BtnCheck" Style="{StaticResource Btn.Secondary}"
+                                Content="检测仓库" Click="BtnCheck_Click"
+                                ToolTip="用 Token 查询仓库是否存在、Pages 是否已开启"/>
+                        <Button x:Name="BtnPublish" Style="{StaticResource Btn.Primary}"
+                                Margin="8,0,0,0" Click="BtnPublish_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="{StaticResource Font.Icon}" FontSize="13"
+                                           Text="&#xE724;" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="一键发布" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BtnStopPublish" Style="{StaticResource Btn.Secondary}"
+                                Margin="8,0,0,0" Content="停止" IsEnabled="False"
+                                Click="BtnStopPublish_Click"
+                                ToolTip="中断当前发布流程"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ==================== 发布结果卡 ==================== -->
+        <Border x:Name="PanelResult" Grid.Row="2" Visibility="Collapsed"
+                Margin="32,12,32,0" Padding="16,12"
+                Background="{StaticResource Brush.AccentSoft}"
+                BorderBrush="#C7DCF2" BorderThickness="1" CornerRadius="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock x:Name="TxtResultTitle" Text="发布成功" FontSize="12"
+                               Foreground="{StaticResource Brush.Accent}"/>
+                    <TextBlock x:Name="TxtSiteUrl" FontSize="14" FontWeight="SemiBold"
+                               Margin="0,4,0,0"
+                               Foreground="{StaticResource Brush.Accent}"
+                               FontFamily="Consolas, Microsoft YaHei UI"
+                               TextTrimming="CharacterEllipsis"
+                               ToolTipService.ShowDuration="60000"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="BtnOpenSite" Style="{StaticResource Btn.Ghost}"
+                            Content="打开站点" Click="BtnOpenSite_Click"/>
+                    <Button x:Name="BtnCopyUrl" Style="{StaticResource Btn.Ghost}"
+                            Content="复制地址" Click="BtnCopyUrl_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ==================== 日志区 ==================== -->
+        <Border Grid.Row="3" Style="{StaticResource Card}" Margin="32,14,32,24" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Padding="16,9"
+                        BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <TextBlock Text="发布日志" FontSize="12.5" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource Brush.TextPrimary}"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <CheckBox x:Name="ChkAutoScroll" Content="自动滚动" IsChecked="True"
+                                      FontSize="12" VerticalAlignment="Center"
+                                      Foreground="{StaticResource Brush.TextSecondary}"/>
+                            <Button Style="{StaticResource Btn.Ghost}" Content="复制日志"
+                                    Margin="12,0,0,0" Click="BtnCopyLog_Click"/>
+                            <Button Style="{StaticResource Btn.Ghost}" Content="清空"
+                                    Margin="2,0,0,0" Click="BtnClearLog_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 底部留 8px 内边距：日志滚到底时最后一行不会贴着圆角被看掉半行 -->
+                <Border Grid.Row="1" Background="#1E1E1E" CornerRadius="0,0,8,8" Padding="0,0,0,8">
+                    <RichTextBox x:Name="LogBox"
+                                 IsReadOnly="True"
+                                 IsUndoEnabled="False"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 Padding="14,10,14,10"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 SelectionBrush="#264F78"
+                                 FontFamily="Consolas, Cascadia Mono, Microsoft YaHei UI"/>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

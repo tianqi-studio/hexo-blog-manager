@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    项目文件说明：
+    1. 目标框架 net10.0-windows —— 使用本机已安装的 .NET 10 SDK / 运行时，WPF 桌面应用。
+    2. 全程零第三方 NuGet 依赖，保证「下载即编译、不折腾」。
+    3. UseWPF 打开 WPF 支持；Nullable 打开可空引用类型检查，提前暴露空引用隐患。
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>HexoBlogManager</RootNamespace>
+    <AssemblyName>HexoBlogManager</AssemblyName>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Version>0.1.0</Version>
+    <Product>Hexo 博客本地管理</Product>
+    <AssemblyTitle>Hexo 博客本地管理</AssemblyTitle>
+    <Company>Local Tool</Company>
+    <!-- 关闭「把警告当错误」，避免 WPF 生成的中间代码警告阻塞编译 -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- 我们不需要自动生成 assembly 特性文件，保留默认即可 -->
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,392 @@
+<UserControl x:Class="HexoBlogManager.Views.ConfigView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <!-- 选项卡：下划线式，贴合 Fluent 观感 -->
+        <Style x:Key="ConfigTabItem" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource Brush.TextSecondary}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Grid Margin="0,0,22,0">
+                            <Border Padding="0,9,0,10" Background="Transparent">
+                                <ContentPresenter ContentSource="Header"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <Border x:Name="Indicator" Height="2" VerticalAlignment="Bottom"
+                                    Background="Transparent" CornerRadius="1"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource Brush.TextPrimary}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource Brush.Accent}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter TargetName="Indicator" Property="Background"
+                                        Value="{StaticResource Brush.Accent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ConfigTabControl" TargetType="TabControl">
+            <Setter Property="ItemContainerStyle" Value="{StaticResource ConfigTabItem}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0"
+                                    BorderBrush="{StaticResource Brush.Border}"
+                                    BorderThickness="0,0,0,1">
+                                <TabPanel IsItemsHost="True" HorizontalAlignment="Left"/>
+                            </Border>
+
+                            <ContentPresenter Grid.Row="1" ContentSource="SelectedContent"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 多行菜单编辑器 -->
+        <Style x:Key="MenuBox" TargetType="TextBox" BasedOn="{StaticResource Input}">
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+            <Setter Property="FontFamily" Value="Consolas, Microsoft YaHei UI"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+        </Style>
+
+        <!-- 下拉框：与输入框保持同一视觉语言 -->
+        <Style x:Key="ConfigCombo" TargetType="ComboBox">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="{StaticResource Font.Ui}"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Brush.BorderStrong}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Brush.Window}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ==================== 页头 ==================== -->
+        <StackPanel Grid.Row="0" Margin="32,26,32,0">
+            <TextBlock Style="{StaticResource Text.PageTitle}" Text="配置管理"/>
+            <TextBlock Style="{StaticResource Text.PageDesc}"
+                       Text="可视化修改 Hexo 与 Butterfly 的常用配置。每次保存前会自动备份原文件。"/>
+        </StackPanel>
+
+        <!-- ==================== 选项卡 ==================== -->
+        <TabControl Grid.Row="1" x:Name="ConfigTabs"
+                    Style="{StaticResource ConfigTabControl}"
+                    Margin="32,10,32,0">
+
+            <!-- ========== 站点基础 ========== -->
+            <TabItem Header="站点基础">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,16,0,0">
+                    <Border Style="{StaticResource Card}" Margin="0,0,6,8">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Text.CardTitle}" Text="网站信息"/>
+                            <TextBlock Style="{StaticResource Text.Label}" Margin="0,4,0,0"
+                                       Text="对应 Hexo 根目录的 _config.yml，是整站的标题与身份信息。"/>
+
+                            <!-- 标题 -->
+                            <Grid Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="网站标题" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                <TextBox x:Name="TxtTitle" Grid.Column="1"
+                                         Style="{StaticResource Input}"
+                                         TextChanged="OnTextChanged"
+                                         ToolTip="对应 title，同时也是浏览器标签页标题"/>
+                            </Grid>
+
+                            <!-- 副标题 -->
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="副标题" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                <TextBox x:Name="TxtSubtitle" Grid.Column="1"
+                                         Style="{StaticResource Input}"
+                                         TextChanged="OnTextChanged"
+                                         ToolTip="对应 subtitle，显示在标题下方"/>
+                            </Grid>
+
+                            <!-- 描述 -->
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="站点描述" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                <TextBox x:Name="TxtDescription" Grid.Column="1"
+                                         Style="{StaticResource Input}"
+                                         TextChanged="OnTextChanged"
+                                         ToolTip="对应 description，会被搜索引擎收录，也用于 SEO 描述"/>
+                            </Grid>
+
+                            <!-- 作者 -->
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="作者" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                <TextBox x:Name="TxtAuthor" Grid.Column="1"
+                                         Style="{StaticResource Input}"
+                                         TextChanged="OnTextChanged"
+                                         ToolTip="对应 author"/>
+                            </Grid>
+
+                            <!-- 关键词 -->
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="关键词" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                <TextBox x:Name="TxtKeywords" Grid.Column="1"
+                                         Style="{StaticResource Input}"
+                                         TextChanged="OnTextChanged"
+                                         ToolTip="对应 keywords，多个用英文逗号分隔"/>
+                            </Grid>
+
+                            <!-- 语言 -->
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="语言" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                <TextBox x:Name="TxtLanguage" Grid.Column="1"
+                                         Style="{StaticResource Input}"
+                                         TextChanged="OnTextChanged"
+                                         ToolTip="例如 zh-CN、en、zh-TW"/>
+                            </Grid>
+
+                            <!-- 网址 -->
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="站点地址" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                <TextBox x:Name="TxtUrl" Grid.Column="1"
+                                         Style="{StaticResource Input}"
+                                         TextChanged="OnTextChanged"
+                                         ToolTip="对应 url，例如 https://example.com"/>
+                            </Grid>
+
+                            <TextBlock x:Name="TxtMainPath" FontSize="11"
+                                       Foreground="{StaticResource Brush.TextTertiary}"
+                                       Margin="0,16,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ========== Butterfly 主题 ========== -->
+            <TabItem Header="Butterfly 主题">
+                <ScrollViewer x:Name="ThemeScroll"
+                              VerticalScrollBarVisibility="Auto" Margin="0,16,0,0">
+                    <StackPanel Margin="0,0,6,8">
+
+                        <!-- 没有主题配置时的提示 -->
+                        <Border x:Name="PanelNoTheme" Visibility="Collapsed"
+                                Style="{StaticResource Card}" Background="#FFF6E5"
+                                BorderBrush="#F0DCA8">
+                            <StackPanel>
+                                <TextBlock Text="没有找到 Butterfly 主题配置" FontSize="13"
+                                           FontWeight="SemiBold" Foreground="#7A4E00"/>
+                                <TextBlock Margin="0,6,0,0" FontSize="12" Foreground="#7A4E00"
+                                           TextWrapping="Wrap" LineHeight="20"
+                                           Text="在 _config.yml、themes/butterfly、node_modules/hexo-theme-butterfly 下都没有找到配置文件。请确认主题已正确安装。"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 导航菜单 -->
+                        <Border x:Name="PanelTheme" Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Text.CardTitle}" Text="导航菜单"/>
+                                <TextBlock Style="{StaticResource Text.Label}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                           Text="每行一个菜单项，格式：显示名称: 链接 || 图标。图标可留空。"/>
+
+                                <TextBox x:Name="TxtMenu" Style="{StaticResource MenuBox}"
+                                         Height="132" Margin="0,10,0,0"
+                                         TextChanged="OnTextChanged"/>
+
+                                <TextBlock FontSize="11" Foreground="{StaticResource Brush.TextTertiary}"
+                                           Margin="0,6,0,0" TextWrapping="Wrap"
+                                           Text="示例：主页: / || fas fa-home　·　归档: /archives/ || fas fa-archive"/>
+
+                                <Separator Margin="0,18,0,14" Background="{StaticResource Brush.Border}"/>
+
+                                <TextBlock Style="{StaticResource Text.CardTitle}" Text="导航与页脚"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <CheckBox x:Name="ChkNavDisplayTitle" Content="导航栏显示站点标题"
+                                              FontSize="12.5" VerticalAlignment="Center"
+                                              Checked="OnToggleChanged" Unchecked="OnToggleChanged"
+                                              Foreground="{StaticResource Brush.TextPrimary}"/>
+                                    <CheckBox x:Name="ChkNavFixed" Content="导航栏固定顶部"
+                                              FontSize="12.5" Margin="24,0,0,0" VerticalAlignment="Center"
+                                              Checked="OnToggleChanged" Unchecked="OnToggleChanged"
+                                              Foreground="{StaticResource Brush.TextPrimary}"/>
+                                </StackPanel>
+
+                                <!-- 页脚自定义文字 -->
+                                <Grid Margin="0,16,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="130"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="页脚文字" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                    <TextBox x:Name="TxtFooterText" Grid.Column="1"
+                                             Style="{StaticResource Input}"
+                                             TextChanged="OnTextChanged"
+                                             ToolTip="对应 footer.custom_text，显示在页脚的自定义文字"/>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <CheckBox x:Name="ChkCopyright" Content="显示版权信息"
+                                              FontSize="12.5" VerticalAlignment="Center"
+                                              Checked="OnToggleChanged" Unchecked="OnToggleChanged"
+                                              Foreground="{StaticResource Brush.TextPrimary}"/>
+                                    <CheckBox x:Name="ChkOwner" Content="显示作者链接"
+                                              FontSize="12.5" Margin="24,0,0,0" VerticalAlignment="Center"
+                                              Checked="OnToggleChanged" Unchecked="OnToggleChanged"
+                                              Foreground="{StaticResource Brush.TextPrimary}"/>
+                                </StackPanel>
+
+                                <Separator Margin="0,18,0,14" Background="{StaticResource Brush.Border}"/>
+
+                                <!-- ===== 评论系统 ===== -->
+                                <TextBlock Style="{StaticResource Text.CardTitle}" Text="评论系统"/>
+                                <TextBlock Style="{StaticResource Text.Label}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                           Text="对应 comments.use。启用后，单篇文章仍可在「文章管理」里把「开启评论」取消勾选来单独关闭。"/>
+
+                                <Grid Margin="0,14,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="130"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="评论系统" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                    <ComboBox x:Name="CmbComments" Grid.Column="1"
+                                              Style="{StaticResource ConfigCombo}"
+                                              SelectionChanged="CmbComments_SelectionChanged">
+                                        <ComboBoxItem Content="不启用" Tag=""/>
+                                        <ComboBoxItem Content="Giscus（GitHub Discussions）" Tag="Giscus"/>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- giscus 参数（只在选中 Giscus 时显示） -->
+                                <StackPanel x:Name="PanelGiscus" Visibility="Collapsed">
+
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="仓库" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                        <TextBox x:Name="TxtGiscusRepo" Grid.Column="1"
+                                                 Style="{StaticResource Input}"
+                                                 TextChanged="OnTextChanged"
+                                                 ToolTip="格式：用户名/仓库名，例如 yourname/yourname.github.io"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="repo_id" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                        <TextBox x:Name="TxtGiscusRepoId" Grid.Column="1"
+                                                 Style="{StaticResource Input}"
+                                                 TextChanged="OnTextChanged"
+                                                 FontFamily="Consolas, Microsoft YaHei UI"
+                                                 ToolTip="R_ 开头的字符串，从 giscus.app 复制"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="category_id" Style="{StaticResource Text.Label}" FontSize="12.5"/>
+                                        <TextBox x:Name="TxtGiscusCategoryId" Grid.Column="1"
+                                                 Style="{StaticResource Input}"
+                                                 TextChanged="OnTextChanged"
+                                                 FontFamily="Consolas, Microsoft YaHei UI"
+                                                 ToolTip="DIC_ 开头的字符串，从 giscus.app 复制"/>
+                                    </Grid>
+
+                                    <Border Background="{StaticResource Brush.Soft}" CornerRadius="6"
+                                            Padding="13,11" Margin="0,14,0,0">
+                                        <StackPanel>
+                                            <TextBlock FontSize="11.5" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource Brush.TextSecondary}"
+                                                       Text="这三个参数去哪拿？"/>
+                                            <TextBlock FontSize="11.5" Margin="0,4,0,0"
+                                                       Foreground="{StaticResource Brush.TextSecondary}"
+                                                       TextWrapping="Wrap" LineHeight="19"
+                                                       Text="打开 giscus.app → 填入仓库 → 前提是仓库为 public、已开启 Discussions、并安装了 giscus App → 选择 Discussion 分类 → 页面下方会给出 repo / repoId / categoryId，复制到这里保存即可。"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <TextBlock x:Name="TxtThemePath" FontSize="11"
+                                           Foreground="{StaticResource Brush.TextTertiary}"
+                                           Margin="0,16,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- ==================== 底部保存栏 ==================== -->
+        <Border Grid.Row="2" Background="{StaticResource Brush.Card}"
+                BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,1,0,0"
+                Padding="32,12">
+            <Grid>
+                <TextBlock x:Name="TxtStatus" VerticalAlignment="Center"
+                           FontSize="11.5" TextWrapping="Wrap"
+                           Foreground="{StaticResource Brush.TextTertiary}"
+                           Text="正在加载配置…"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnReload" Style="{StaticResource Btn.Secondary}"
+                            Content="重新加载" Click="BtnReload_Click"/>
+                    <Button x:Name="BtnSave" Style="{StaticResource Btn.Primary}"
+                            Content="保存修改" Margin="10,0,0,0" Click="BtnSave_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

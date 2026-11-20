@@ -1,0 +1,168 @@
+<Window x:Class="HexoBlogManager.Views.PostEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="编辑文章"
+        Width="1120" Height="780"
+        MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Brush.Window}"
+        UseLayoutRounding="True"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <!-- 多行编辑器：在通用输入框样式基础上改为顶部对齐、等宽字体 -->
+        <Style x:Key="EditorBox" TargetType="TextBox" BasedOn="{StaticResource Input}">
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="AcceptsTab" Value="True"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="FontFamily" Value="Consolas, Cascadia Mono, Microsoft YaHei UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24,18,24,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- 标题 -->
+            <RowDefinition Height="Auto"/>   <!-- 元信息 -->
+            <RowDefinition Height="Auto"/>   <!-- 分隔提示 -->
+            <RowDefinition Height="*"/>      <!-- 编辑区 -->
+            <RowDefinition Height="Auto"/>   <!-- 底部按钮 -->
+        </Grid.RowDefinitions>
+
+        <!-- ==================== 标题 ==================== -->
+        <StackPanel Grid.Row="0">
+            <TextBlock x:Name="TxtHeader" Text="新建文章"
+                       FontSize="11.5" Foreground="{StaticResource Brush.TextTertiary}"/>
+
+            <TextBox x:Name="TitleBox" Margin="0,6,0,0"
+                     Style="{StaticResource Input}"
+                     FontSize="19" FontWeight="SemiBold"
+                     Padding="10,8"
+                     ToolTip="文章标题，会写入 front-matter 的 title 字段"/>
+        </StackPanel>
+
+        <!-- ==================== 元信息 ==================== -->
+        <Grid Grid.Row="1" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 日期 / 文件名 -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="日期"
+                       Style="{StaticResource Text.Label}" Margin="0,0,10,0"/>
+            <TextBox x:Name="DateBox" Grid.Row="0" Grid.Column="1"
+                     Style="{StaticResource Input}"
+                     ToolTip="格式：yyyy-MM-dd HH:mm:ss，例如 2026-11-20 20:30:00"/>
+
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="文件名"
+                       Style="{StaticResource Text.Label}" Margin="16,0,10,0"/>
+            <TextBox x:Name="FileNameBox" Grid.Row="0" Grid.Column="3"
+                     Style="{StaticResource Input}"
+                     ToolTip="保存到 source/_posts 下的文件名（不含 .md）。新建时可改，编辑时不可改，避免已有链接失效。"/>
+
+            <!-- 标签 / 分类 -->
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="标签"
+                       Style="{StaticResource Text.Label}" Margin="0,10,10,0"/>
+            <TextBox x:Name="TagsBox" Grid.Row="1" Grid.Column="1"
+                     Style="{StaticResource Input}" Margin="0,10,0,0"
+                     ToolTip="多个标签用英文逗号或中文逗号分隔"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="分类"
+                       Style="{StaticResource Text.Label}" Margin="16,10,10,0"/>
+            <TextBox x:Name="CategoriesBox" Grid.Row="1" Grid.Column="3"
+                     Style="{StaticResource Input}" Margin="0,10,0,0"
+                     ToolTip="多个分类用逗号分隔，保存为 YAML 列表"/>
+
+            <!-- 置顶 / 评论 -->
+            <StackPanel Grid.Row="2" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,12,0,0">
+                <CheckBox x:Name="TopCheck" Content="置顶" FontSize="12.5"
+                          VerticalAlignment="Center" Foreground="{StaticResource Brush.TextPrimary}"/>
+                <CheckBox x:Name="CommentsCheck" Content="开启评论" FontSize="12.5"
+                          Margin="22,0,0,0" VerticalAlignment="Center"
+                          Foreground="{StaticResource Brush.TextPrimary}"
+                          ToolTip="对应 front-matter 的 comments 字段。取消勾选后，本篇不显示站点配置的评论系统（例如 giscus）。"/>
+                <TextBlock Text="提示：标签/分类留空会写成 []，不会影响 Hexo 生成。"
+                           FontSize="11.5" Foreground="{StaticResource Brush.TextTertiary}"
+                           Margin="22,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ==================== 编辑区标题 ==================== -->
+        <Grid Grid.Row="2" Margin="0,16,0,8">
+            <TextBlock Text="正文（Markdown）" FontSize="11.5"
+                       Foreground="{StaticResource Brush.TextTertiary}" VerticalAlignment="Center"/>
+            <TextBlock Text="可以把图片直接拖进来，会自动转存并插入链接"
+                       FontSize="11.5" Foreground="{StaticResource Brush.TextTertiary}"
+                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        </Grid>
+
+        <!-- ==================== 编辑 / 预览 并排 ==================== -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="300"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*" MinWidth="280"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0"
+                    Background="White"
+                    BorderBrush="{StaticResource Brush.Border}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <TextBox x:Name="Editor"
+                         Style="{StaticResource EditorBox}"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         AllowDrop="True"
+                         Drop="Editor_Drop"
+                         DragOver="Editor_DragOver"
+                         TextChanged="Editor_TextChanged"/>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="10"
+                          HorizontalAlignment="Stretch"
+                          Background="Transparent"
+                          ShowsPreview="False"/>
+
+            <Border Grid.Column="2"
+                    Background="White"
+                    BorderBrush="{StaticResource Brush.Border}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <FlowDocumentScrollViewer x:Name="Preview"
+                                          VerticalScrollBarVisibility="Auto"
+                                          IsToolBarVisible="False"
+                                          Background="Transparent"
+                                          Padding="0"/>
+            </Border>
+        </Grid>
+
+        <!-- ==================== 底部 ==================== -->
+        <Grid Grid.Row="4" Margin="0,14,0,0">
+            <TextBlock x:Name="TxtStatus" FontSize="11.5"
+                       Foreground="{StaticResource Brush.TextTertiary}"
+                       VerticalAlignment="Center"
+                       Text="0 字"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnCancel" Style="{StaticResource Btn.Secondary}"
+                        Content="取消" MinWidth="76" Click="BtnCancel_Click"/>
+                <Button x:Name="BtnSave" Style="{StaticResource Btn.Primary}"
+                        Content="保存" MinWidth="96" Margin="10,0,0,0" Click="BtnSave_Click"
+                        IsDefault="True"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

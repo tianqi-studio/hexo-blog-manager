@@ -1,0 +1,119 @@
+<Window x:Class="HexoBlogManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Hexo 博客本地管理"
+        Width="1140" Height="740"
+        MinWidth="960" MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Brush.Window}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- 侧边导航栏 -->
+            <ColumnDefinition Width="228"/>
+            <!-- 主内容区 -->
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ======================= 左侧导航栏 ======================= -->
+        <Border Grid.Column="0"
+                Background="{StaticResource Brush.Card}"
+                BorderBrush="{StaticResource Brush.Border}"
+                BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 品牌区 -->
+                <StackPanel Grid.Row="0" Margin="20,22,20,18">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="32" Height="32" CornerRadius="8"
+                                Background="{StaticResource Brush.Accent}">
+                            <TextBlock Text="H" Foreground="White" FontSize="17" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Hexo 博客管理" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock Text="本地可视化工具" FontSize="11"
+                                       Foreground="{StaticResource Brush.TextTertiary}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- 导航项 -->
+                <ListBox Grid.Row="1" x:Name="NavList" Style="{StaticResource NavList}"
+                         SelectionChanged="NavList_SelectionChanged" SelectedIndex="0">
+                    <ListBoxItem Tag="site">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource Font.Icon}" FontSize="15"
+                                       Width="22" TextAlignment="Center" VerticalAlignment="Center"
+                                       Text="&#xE80F;"/>
+                            <TextBlock Text="站点与目录" FontSize="13" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem Tag="posts">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource Font.Icon}" FontSize="15"
+                                       Width="22" TextAlignment="Center" VerticalAlignment="Center"
+                                       Text="&#xE8A5;"/>
+                            <TextBlock Text="文章管理" FontSize="13" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem Tag="console">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource Font.Icon}" FontSize="15"
+                                       Width="22" TextAlignment="Center" VerticalAlignment="Center"
+                                       Text="&#xE756;"/>
+                            <TextBlock Text="命令控制台" FontSize="13" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem Tag="config">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource Font.Icon}" FontSize="15"
+                                       Width="22" TextAlignment="Center" VerticalAlignment="Center"
+                                       Text="&#xE713;"/>
+                            <TextBlock Text="配置管理" FontSize="13" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ListBoxItem>
+
+                    <ListBoxItem Tag="publish">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource Font.Icon}" FontSize="15"
+                                       Width="22" TextAlignment="Center" VerticalAlignment="Center"
+                                       Text="&#xE724;"/>
+                            <TextBlock Text="发布到 GitHub" FontSize="13" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
+
+                <!-- 底部：当前博客路径 -->
+                <Border Grid.Row="2"
+                        BorderBrush="{StaticResource Brush.Border}"
+                        BorderThickness="0,1,0,0"
+                        Padding="18,12">
+                    <StackPanel>
+                        <TextBlock Text="当前博客" FontSize="11"
+                                   Foreground="{StaticResource Brush.TextTertiary}"/>
+                        <TextBlock x:Name="TxtCurrentBlog" Text="未选择"
+                                   FontSize="12" Margin="0,5,0,0"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTipService.ShowDuration="60000"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ======================= 主内容区 ======================= -->
+        <ContentControl Grid.Column="1" x:Name="MainContent"/>
+
+    </Grid>
+</Window>

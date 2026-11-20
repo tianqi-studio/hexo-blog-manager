@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- 临时自检工程：直接链接主项目的纯逻辑源文件，不依赖 WPF，跑完即删 -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>SelfTest</AssemblyName>
+    <!-- AnsiText 用到 System.Windows.Media.Color，所以自检工程也要开 WPF（输出仍是控制台程序） -->
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\HexoBlogManager\Services\FrontMatter.cs" />
+    <Compile Include="..\HexoBlogManager\Services\YamlMiniParser.cs" />
+    <Compile Include="..\HexoBlogManager\Services\YamlPathEditor.cs" />
+    <Compile Include="..\HexoBlogManager\Services\ConfigService.cs" />
+    <Compile Include="..\HexoBlogManager\Services\ProcessRunner.cs" />
+    <Compile Include="..\HexoBlogManager\Services\AnsiText.cs" />
+    <Compile Include="..\HexoBlogManager\Services\HexoCommandRunner.cs" />
+    <Compile Include="..\HexoBlogManager\Services\StreamingProcess.cs" />
+    <Compile Include="..\HexoBlogManager\Services\GitHubApi.cs" />
+    <Compile Include="..\HexoBlogManager\Services\GitHubPublisher.cs" />
+    <Compile Include="..\HexoBlogManager\Services\SecretProtector.cs" />
+    <Compile Include="..\HexoBlogManager\Models\GitHubPublishSettings.cs" />
+    <Compile Include="..\HexoBlogManager\Services\PostService.cs" />
+    <Compile Include="..\HexoBlogManager\Services\RecycleBin.cs" />
+    <Compile Include="..\HexoBlogManager\Services\BlogSiteService.cs" />
+    <Compile Include="..\HexoBlogManager\Models\PostMeta.cs" />
+    <Compile Include="..\HexoBlogManager\Models\BlogSiteInfo.cs" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+<Application x:Class="HexoBlogManager.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        说明：这里不设置 StartupUri，改在 App.xaml.cs 的 OnStartup 里手动创建主窗口，
+        目的是为了能捕获「主窗口构造过程」中抛出的异常，并给出中文提示。
+    -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 全局配色、字体与控件样式 -->
+                <ResourceDictionary Source="Styles/Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

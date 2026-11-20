@@ -1,0 +1,8 @@
+# 统一行尾，避免不同机器上 diff 一片红
+* text=auto eol=crlf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+*.exe binary
