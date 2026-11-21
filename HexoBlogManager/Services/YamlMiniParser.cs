@@ -68,7 +68,7 @@ public static class YamlMiniParser
     /// 剔除行尾注释。只有当 # 位于行首或前面是空白时才算注释，
     /// 这样 "title: My #1 Blog" 里的 #1 不会被误删。
     /// </summary>
-    private static string StripInlineComment(string value)
+    public static string StripInlineComment(string value)
     {
         if (value.Length == 0)
             return value;

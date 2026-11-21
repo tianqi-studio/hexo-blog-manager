@@ -14,6 +14,8 @@
   <ItemGroup>
     <Compile Include="..\HexoBlogManager\Services\FrontMatter.cs" />
     <Compile Include="..\HexoBlogManager\Services\YamlMiniParser.cs" />
+    <Compile Include="..\HexoBlogManager\Services\YamlFlatReader.cs" />
+    <Compile Include="..\HexoBlogManager\Services\BlogConfigScanner.cs" />
     <Compile Include="..\HexoBlogManager\Services\YamlPathEditor.cs" />
     <Compile Include="..\HexoBlogManager\Services\ConfigService.cs" />
     <Compile Include="..\HexoBlogManager\Services\ProcessRunner.cs" />

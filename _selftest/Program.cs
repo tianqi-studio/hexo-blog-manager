@@ -184,5 +184,11 @@ pass += ghPass;
 fail += ghFail;
 
 Console.WriteLine();
+Console.WriteLine("========== 配置自动识别 ==========");
+var (scanPass, scanFail) = SelfTest.ConfigScanTests.Run();
+pass += scanPass;
+fail += scanFail;
+
+Console.WriteLine();
 Console.WriteLine($"===== 合计：通过 {pass} 项，失败 {fail} 项 =====");
 return fail == 0 ? 0 : 1;

@@ -87,6 +87,7 @@
     <Grid Background="{StaticResource Brush.Window}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -95,11 +96,46 @@
         <StackPanel Grid.Row="0" Margin="32,26,32,0">
             <TextBlock Style="{StaticResource Text.PageTitle}" Text="配置管理"/>
             <TextBlock Style="{StaticResource Text.PageDesc}"
-                       Text="可视化修改 Hexo 与 Butterfly 的常用配置。每次保存前会自动备份原文件。"/>
+                       Text="可视化修改 Hexo 与 Butterfly 的常用配置。打开页面会自动识别已有配置并填入表单，每次保存前自动备份原文件。"/>
         </StackPanel>
 
+        <!-- ==================== 自动识别结果 ==================== -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="32,14,32,0" Padding="16,11">
+            <StackPanel>
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse x:Name="DetectDot" Width="8" Height="8"
+                                 Fill="{StaticResource Brush.TextTertiary}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TxtDetectSummary" Margin="9,0,0,0" FontSize="12"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                   Foreground="{StaticResource Brush.TextSecondary}"
+                                   Text="正在识别配置…"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="BtnRescan" Style="{StaticResource Btn.Ghost}"
+                                Content="重新识别" Click="BtnRescan_Click"
+                                ToolTip="重新读取配置文件并填入表单，已修改但未保存的字段会被保留"/>
+                        <Button x:Name="BtnDetail" Style="{StaticResource Btn.Ghost}"
+                                Content="详情" Margin="2,0,0,0" Click="BtnDetail_Click"
+                                ToolTip="查看识别到了哪些文件、每个字段的值来自哪一行"/>
+                    </StackPanel>
+                </Grid>
+
+                <Border x:Name="PanelDetail" Visibility="Collapsed" Margin="0,10,0,0"
+                        Background="{StaticResource Brush.Soft}" CornerRadius="6" Padding="12,10">
+                    <ScrollViewer MaxHeight="168" VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="TxtDetailText" FontSize="11.5" LineHeight="18"
+                                   TextWrapping="Wrap"
+                                   FontFamily="Consolas, Microsoft YaHei UI"
+                                   Foreground="{StaticResource Brush.TextSecondary}"/>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+        </Border>
+
         <!-- ==================== 选项卡 ==================== -->
-        <TabControl Grid.Row="1" x:Name="ConfigTabs"
+        <TabControl Grid.Row="2" x:Name="ConfigTabs"
                     Style="{StaticResource ConfigTabControl}"
                     Margin="32,10,32,0">
 
@@ -371,7 +407,7 @@
         </TabControl>
 
         <!-- ==================== 底部保存栏 ==================== -->
-        <Border Grid.Row="2" Background="{StaticResource Brush.Card}"
+        <Border Grid.Row="3" Background="{StaticResource Brush.Card}"
                 BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,1,0,0"
                 Padding="32,12">
             <Grid>

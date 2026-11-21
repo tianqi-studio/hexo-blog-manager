@@ -55,6 +55,12 @@ public partial class App : Application
             if (e.Args.Any(arg => arg.Equals("--scrollend", StringComparison.OrdinalIgnoreCase)))
                 Views.ConfigView.DebugScrollToEnd = true;
 
+            if (e.Args.Any(arg => arg.Equals("--configdetail", StringComparison.OrdinalIgnoreCase)))
+                Views.ConfigView.DebugShowDetail = true;
+
+            if (e.Args.Any(arg => arg.Equals("--configsave", StringComparison.OrdinalIgnoreCase)))
+                Views.ConfigView.DebugAutoSave = true;
+
             string? shotPath = TryGetArg(e.Args, "--screenshot");
             if (!string.IsNullOrWhiteSpace(shotPath))
             {

@@ -106,12 +106,19 @@ public static class YamlPathEditor
     // 写入（返回新内容，不落盘）
     // ==================================================================
 
-    /// <summary>设置一个标量值。键已存在则替换该行，父级不存在会自动创建。</summary>
-    public static string SetScalar(string content, string path, string value)
+    /// <summary>
+    /// 设置一个标量值。键已存在则替换该行，父级不存在会自动创建。
+    /// </summary>
+    /// <param name="raw">
+    /// true 表示不做引号转义，直接按传入文本写入。
+    /// 布尔值必须用 raw：否则 true/false 会被当成「容易被误读的字符串」加上引号，
+    /// 变成 fixed: "true"，YAML 里就不是布尔值了。
+    /// </param>
+    public static string SetScalar(string content, string path, string value, bool raw = false)
     {
         var lines = SplitLines(content);
         string[] keys = path.Split('.');
-        string escaped = string.IsNullOrEmpty(value) ? string.Empty : FrontMatter.EscapeScalar(value);
+        string escaped = string.IsNullOrEmpty(value) || raw ? value : FrontMatter.EscapeScalar(value);
 
         int index = FindPathLine(lines, keys);
 

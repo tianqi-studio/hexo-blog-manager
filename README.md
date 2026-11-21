@@ -39,11 +39,16 @@
 - **能识别「退出码 0 但其实失败了」**：Hexo 在 deployer 缺失时打 ERROR 却仍返回 0，只看退出码会误报成功
 
 ### 4. Butterfly 配置管理
+- **打开页面自动识别已有配置**：主配置、`_config.production.yml` 之类的环境覆盖配置、主题三处候选位置（根目录覆盖层 / `themes` / `node_modules`）都会找一遍，按 Hexo 的真实优先级合并后填入表单
+- 每个字段都能看到「值来自哪个文件第几行」；配置缺失、写坏（Tab 缩进、缺冒号、重复键、引号没闭合）、编码是 GBK 都能读，读不到就用默认值，绝不因为读失败让页面打不开
+- 「重新识别」会保留你改过但没保存的内容；从主题默认值继承来的项，保存时不会主动写进你的配置文件
 - 可视化编辑 `_config.yml`（站点标题/副标题/描述/作者/关键词/语言/地址）
 - 可视化编辑 Butterfly 主题配置（导航菜单逐行编辑、导航栏开关、页脚文字与开关、评论系统）
-- 评论系统支持切到 **giscus**，参数（repo / repo_id / category_id）在界面里填，缺失的配置段会自动创建
+- 评论系统支持切到 **giscus**，参数（repo / repo_id / category_id）在界面里填，缺失的配置段会自动创建；遇到 Valine / Waline 等其他系统会标成「保持原样」，保存不会把它抹掉
 - 采用「点路径 + 行级改写」而不是「解析 → 序列化」，注释、字段顺序、缩进一个字节都不动
 - 保存前自动备份为 `_config.yml.yyyyMMdd-HHmmss.bak`，最多保留 10 份
+
+![配置自动识别](docs/screenshots/07-config.png)
 
 ### 5. 一键发布到 GitHub Pages
 ![发布](docs/screenshots/06-publish-done.png)
@@ -101,7 +106,9 @@ HexoBlogManager/
 │   ├─ FrontMatter.cs          front-matter 解析与保真重建
 │   ├─ MarkdownRenderer.cs     Markdown → FlowDocument
 │   ├─ RecycleBin.cs           删除到回收站（SHFileOperation）
-│   ├─ YamlPathEditor.cs       点路径行级读写 YAML
+│   ├─ YamlPathEditor.cs       点路径行级读写 YAML（写入）
+│   ├─ YamlFlatReader.cs       容错型 YAML 扁平解析（读取，坏行只警告不中断）
+│   ├─ BlogConfigScanner.cs    配置文件自动检测 / 优先级合并 / 字段来源追踪
 │   ├─ ConfigService.cs        配置文件定位 / 备份
 │   ├─ SecretProtector.cs      DPAPI 加解密 Token
 │   ├─ GitHubApi.cs            GitHub REST API（仓库 / Pages）
@@ -133,7 +140,7 @@ _selftest/            回归测试（链接主项目源文件，不需要 WPF）
 ```bash
 cd _selftest
 dotnet run
-# ===== 合计：通过 118 项，失败 0 项 =====
+# ===== 合计：通过 176 项，失败 0 项 =====
 ```
 
 > 自检会用到 `D:\testblog` 这个本地测试博客（Hexo 8 + Butterfly 5.7.2），路径写在 `_selftest/Program.cs` 顶部，可以改成你自己的。
