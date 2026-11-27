@@ -209,6 +209,54 @@ public partial class SiteView : UserControl
     // 按钮事件
     // ==================================================================
 
+    /// <summary>
+    /// 弹出「最近打开」菜单，列出之前用过的博客目录。
+    /// 这些路径一直在 settings.json 里维护，之前只有数据、没有入口，
+    /// 用户想切回上一个博客只能重新走一遍文件夹选择器。
+    /// </summary>
+    private void BtnRecent_Click(object sender, RoutedEventArgs e)
+    {
+        var paths = BlogContext.Instance.RecentPaths
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Where(p => !string.Equals(p, _currentPath, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (paths.Count == 0)
+        {
+            MessageBox.Show(Window.GetWindow(this),
+                "还没有其他历史目录。\n\n成功打开过一个博客之后，它会出现在这里。",
+                "最近打开", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var menu = new ContextMenu
+        {
+            PlacementTarget = BtnRecent,
+            Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom
+        };
+
+        foreach (string path in paths)
+        {
+            bool exists;
+            try { exists = Directory.Exists(path); }
+            catch { exists = false; }
+
+            var item = new MenuItem
+            {
+                // 目录不在了也列出来，点一下会得到明确的校验失败提示，
+                // 比让它凭空消失更好解释
+                Header = exists ? path : path + "（目录已不存在）",
+                ToolTip = path,
+                Padding = new Thickness(10, 6, 16, 6)
+            };
+
+            item.Click += async (s, args) => await ValidateAsync(path, fromUser: true);
+            menu.Items.Add(item);
+        }
+
+        menu.IsOpen = true;
+    }
+
     private async void BtnSelect_Click(object sender, RoutedEventArgs e)
     {
         try

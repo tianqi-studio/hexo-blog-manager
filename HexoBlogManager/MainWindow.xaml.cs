@@ -20,6 +20,12 @@ public partial class MainWindow : Window
     private readonly Dictionary<string, UserControl> _viewCache = new();
     private bool _ready;
 
+    /// <summary>当前显示的页面标识，用于判断「从哪一页离开」。</summary>
+    private string? _currentKey;
+
+    /// <summary>回退导航选中项时置位，避免再次触发导航逻辑。</summary>
+    private bool _suppressNav;
+
     /// <summary>调试用：指定启动后默认打开哪个页面（site / posts / console / config）。</summary>
     public string? InitialPage { get; set; }
 
@@ -157,6 +163,40 @@ public partial class MainWindow : Window
 
     private void NavigateTo(string key)
     {
+        if (_suppressNav)
+            return;
+
+        // 配置页有未保存的修改时先确认：切换页面会卸载视图，但视图实例被缓存，
+        // 改动其实还在内存里，用户回到配置页会看到「改过的样子」，
+        // 却不知道这些改动从未落盘——比直接丢失更容易误导。
+        if (_currentKey == "config" && key != "config" &&
+            _viewCache.TryGetValue("config", out var cachedView) &&
+            cachedView is ConfigView configView && configView.HasPendingEdits)
+        {
+            var result = MessageBox.Show(this,
+                "配置页还有未保存的修改，切换页面后需要回到配置页点「保存修改」才会生效。\n\n要现在离开吗？",
+                "有未保存的修改", MessageBoxButton.YesNo, MessageBoxImage.Question,
+                MessageBoxResult.No);
+
+            if (result != MessageBoxResult.Yes)
+            {
+                // 把左侧高亮退回去，否则界面显示已切换、内容却没变
+                _suppressNav = true;
+
+                foreach (object obj in NavList.Items)
+                {
+                    if (obj is ListBoxItem item && (item.Tag as string) == _currentKey)
+                    {
+                        NavList.SelectedItem = item;
+                        break;
+                    }
+                }
+
+                _suppressNav = false;
+                return;
+            }
+        }
+
         if (!_viewCache.TryGetValue(key, out var view))
         {
             view = CreateView(key);
@@ -164,6 +204,7 @@ public partial class MainWindow : Window
         }
 
         MainContent.Content = view;
+        _currentKey = key;
         RefreshCurrentBlogLabel();
     }
 
@@ -207,5 +248,18 @@ public partial class MainWindow : Window
 
         TxtCurrentBlog.Text = name;
         TxtCurrentBlog.ToolTip = path;
+    }
+
+    /// <summary>在资源管理器里打开日志目录。</summary>
+    private void BtnOpenLog_Click(object sender, RoutedEventArgs e)
+    {
+        if (LogService.OpenLogFolder(out string error))
+        {
+            LogService.Info("用户从侧栏打开了日志目录");
+            return;
+        }
+
+        MessageBox.Show(this, "无法打开日志目录：" + error, "打开失败",
+            MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 }

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using HexoBlogManager.Services;
 
 namespace HexoBlogManager;
 
@@ -11,10 +12,19 @@ namespace HexoBlogManager;
 /// 核心职责：
 /// 1) 注册三层全局异常兜底（UI 线程 / 非 UI 线程 / 未观察的 Task 异常），
 ///    保证任何未预料到的错误都以中文提示呈现，而不是直接闪退。
-/// 2) 创建并显示主窗口。
+/// 2) 单实例：重复启动时把已有窗口唤到前台，而不是开第二份。
+/// 3) 创建并显示主窗口。
 /// </summary>
 public partial class App : Application
 {
+    // 单实例与「唤醒已有窗口」的跨进程信令。
+    // Local\ 前缀表示只在当前登录会话内可见，够用且不需要管理员权限。
+    private const string InstanceMutexName = @"Local\HexoBlogManager.SingleInstance";
+    private const string ActivateEventName = @"Local\HexoBlogManager.Activate";
+
+    private static Mutex? _instanceMutex;
+    private static EventWaitHandle? _activateSignal;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         // ---- 全局异常兜底 ----
@@ -25,7 +35,26 @@ public partial class App : Application
         // 未被 await 的 Task 异常
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
+        // 先把「本次运行是什么版本、什么系统」记进日志，出问题时能对上现场
+        LogService.WriteSessionHeader(e.Args);
+
         base.OnStartup(e);
+
+        // ---- 单实例保护 ----
+        // 两个实例同时开，会各自缓存文章列表、各自写 settings.json，
+        // 后保存的覆盖先保存的，而且用户完全看不到发生了什么。
+        //
+        // 带命令行参数的调试启动（--screenshot / --page / --publish 等）跳过这项检查，
+        // 否则自动化验证会被正在运行的实例拦下来。
+        bool isDebugRun = e.Args.Any(a => a.StartsWith("--", StringComparison.Ordinal));
+
+        if (!isDebugRun && !TryEnterSingleInstance())
+        {
+            LogService.Info("已有实例在运行，本次启动不创建窗口，只唤醒已有窗口");
+            SignalRunningInstance();
+            Shutdown(0);
+            return;
+        }
 
         try
         {
@@ -44,6 +73,10 @@ public partial class App : Application
             if (!string.IsNullOrWhiteSpace(editorFile))
                 window.DebugOpenEditor = editorFile;
 
+            // 调试用：打开编辑器后顺便弹出「历史版本」窗口
+            if (e.Args.Any(arg => arg.Equals("--history", StringComparison.OrdinalIgnoreCase)))
+                Views.PostEditorWindow.DebugOpenHistory = true;
+
             string? autorun = TryGetArg(e.Args, "--autorun");
             if (!string.IsNullOrWhiteSpace(autorun))
                 window.DebugAutorun = autorun;
@@ -60,6 +93,10 @@ public partial class App : Application
 
             if (e.Args.Any(arg => arg.Equals("--configsave", StringComparison.OrdinalIgnoreCase)))
                 Views.ConfigView.DebugAutoSave = true;
+
+            // 调试用：配置页加载后自动打开「历史备份」窗口
+            if (e.Args.Any(arg => arg.Equals("--confighistory", StringComparison.OrdinalIgnoreCase)))
+                Views.ConfigView.DebugOpenHistory = true;
 
             string? shotPath = TryGetArg(e.Args, "--screenshot");
             if (!string.IsNullOrWhiteSpace(shotPath))
@@ -96,24 +133,36 @@ public partial class App : Application
                 Services.GitHubApi.BaseUrl = apiBase;
 
             window.Show();
+
+            // 只在「主实例」上监听唤醒信号，调试启动不注册，避免抢信号
+            if (!isDebugRun)
+                StartActivationListener(window);
         }
         catch (Exception ex)
         {
+            LogService.Error("主窗口创建失败", ex);
+
             MessageBox.Show(
                 $"程序启动失败。\n\n错误信息：{ex.Message}\n\n可能原因：\n" +
                 "· 系统缺少 .NET 10 桌面运行时\n" +
-                "· 程序文件被安全软件拦截\n\n详细信息：\n" + ex,
+                "· 程序文件被安全软件拦截\n\n" +
+                $"日志已写入：{LogService.CurrentFile ?? LogService.LogDirectory}\n\n" +
+                "详细信息：\n" + ex,
                 "启动失败", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
     }
 
-    /// <summary>UI 线程未处理异常：提示后继续运行，避免整个程序退出。</summary>
+    /// <summary>UI 线程未处理异常：写日志、提示，然后继续运行。</summary>
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        LogService.Error("UI 线程未处理异常", e.Exception);
+
         MessageBox.Show(
             $"操作过程中发生了一个未预期的错误。\n\n错误信息：{e.Exception.Message}\n\n" +
-            "如果这个问题可以稳定复现，请把上面的信息记下来。\n\n详细堆栈：\n" + e.Exception,
+            "这个问题已经记录到日志里，反馈时附上日志会快很多。\n\n" +
+            $"日志位置：{LogService.CurrentFile ?? LogService.LogDirectory}\n\n" +
+            "详细堆栈：\n" + e.Exception,
             "出错了", MessageBoxButton.OK, MessageBoxImage.Warning);
         e.Handled = true;   // 标记为已处理，程序不退出
     }
@@ -122,15 +171,153 @@ public partial class App : Application
     private static void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         var ex = e.ExceptionObject as Exception;
+        LogService.Error("非 UI 线程未处理异常（进程即将终止）", ex);
+
         MessageBox.Show(
-            $"程序遇到严重错误，即将退出。\n\n错误信息：{ex?.Message ?? "未知错误"}\n\n详细堆栈：\n{ex}",
+            $"程序遇到严重错误，即将退出。\n\n错误信息：{ex?.Message ?? "未知错误"}\n\n" +
+            $"日志已写入：{LogService.CurrentFile ?? LogService.LogDirectory}\n\n" +
+            $"详细堆栈：\n{ex}",
             "严重错误", MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
-    /// <summary>未被观察的 Task 异常：标记为已观察，避免进程被 .NET 终止。</summary>
+    /// <summary>未被观察的 Task 异常：记日志并标记已观察，避免进程被 .NET 终止。</summary>
     private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
+        LogService.Error("未观察的 Task 异常", e.Exception);
         e.SetObserved();
+    }
+
+    // ==================================================================
+    // 单实例
+    // ==================================================================
+
+    /// <summary>
+    /// 尝试成为唯一实例。
+    /// 拿不到互斥体说明已经有一份在跑；出现权限等意外时放行，
+    /// 单实例是便利功能，不应该反过来让程序打不开。
+    /// </summary>
+    private static bool TryEnterSingleInstance()
+    {
+        try
+        {
+            _instanceMutex = new Mutex(initiallyOwned: true, InstanceMutexName, out bool createdNew);
+
+            if (createdNew)
+                return true;
+
+            _instanceMutex.Dispose();
+            _instanceMutex = null;
+            return false;
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn("单实例检查失败，按允许启动处理：" + ex.Message);
+            return true;
+        }
+    }
+
+    /// <summary>通知已在运行的那份把自己唤到前台。</summary>
+    private static void SignalRunningInstance()
+    {
+        // 存在竞争窗口：对方刚拿到互斥体，事件对象还没创建，所以重试几次
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                if (EventWaitHandle.TryOpenExisting(ActivateEventName, out var handle))
+                {
+                    using (handle)
+                        handle.Set();
+
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Warn("唤醒已有实例失败：" + ex.Message);
+                return;
+            }
+
+            Thread.Sleep(120);
+        }
+    }
+
+    /// <summary>
+    /// 后台等唤醒信号；收到就把主窗口提到前台。
+    /// 用独立线程而不是 UI 线程轮询，避免阻塞消息循环。
+    /// </summary>
+    private static void StartActivationListener(Window window)
+    {
+        try
+        {
+            _activateSignal = new EventWaitHandle(
+                initialState: false,
+                EventResetMode.AutoReset,
+                ActivateEventName);
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn("无法创建唤醒信号，重复启动不会自动唤起窗口：" + ex.Message);
+            return;
+        }
+
+        var thread = new Thread(() =>
+        {
+            while (true)
+            {
+                try
+                {
+                    _activateSignal.WaitOne();
+                    window.Dispatcher.BeginInvoke(new Action(() => BringToFront(window)));
+                }
+                catch
+                {
+                    return;   // 句柄被释放（程序正在退出）
+                }
+            }
+        })
+        {
+            IsBackground = true,          // 后台线程，不阻止进程退出
+            Name = "HexoBlogManager.ActivateListener"
+        };
+
+        thread.Start();
+    }
+
+    /// <summary>把窗口从最小化恢复并置顶激活。</summary>
+    private static void BringToFront(Window window)
+    {
+        try
+        {
+            if (window.WindowState == WindowState.Minimized)
+                window.WindowState = WindowState.Normal;
+
+            window.Show();
+            window.Activate();
+
+            // 窗口被别的程序盖住时，Activate 不一定能拿到前台，
+            // 短暂切一下 Topmost 更可靠（用完立刻还原，不改变用户设置）
+            bool topmost = window.Topmost;
+            window.Topmost = true;
+            window.Topmost = topmost;
+
+            window.Focus();
+
+            LogService.Info("收到重复启动信号，已把已有窗口唤到前台");
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn("唤醒窗口失败：" + ex.Message);
+        }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        try { _activateSignal?.Dispose(); } catch { }
+        try { _instanceMutex?.ReleaseMutex(); } catch { }
+        try { _instanceMutex?.Dispose(); } catch { }
+
+        base.OnExit(e);
     }
 
     // ==================================================================

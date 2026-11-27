@@ -73,6 +73,7 @@ public sealed class ConfigService
     /// <summary>
     /// 备份配置文件，返回备份文件完整路径。
     /// 命名形如：_config.yml.20261120-204501.bak
+    /// 同一秒内连存两次会顺延成 ...-204501-1.bak，不覆盖已有备份。
     /// </summary>
     public string Backup(string filePath)
     {
@@ -82,7 +83,14 @@ public sealed class ConfigService
         string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
         string backupPath = $"{filePath}.{stamp}.bak";
 
-        File.Copy(filePath, backupPath, overwrite: true);
+        int suffix = 1;
+        while (File.Exists(backupPath))
+        {
+            backupPath = $"{filePath}.{stamp}-{suffix}.bak";
+            suffix++;
+        }
+
+        File.Copy(filePath, backupPath, overwrite: false);
         return backupPath;
     }
 
@@ -115,4 +123,106 @@ public sealed class ConfigService
             // 清理失败不影响主流程
         }
     }
+
+    /// <summary>
+    /// 列出某个配置文件的全部备份，最新的在前。
+    /// 备份和配置文件在同一目录，命名形如 _config.yml.20261120-204501.bak。
+    /// </summary>
+    public List<ConfigBackupEntry> ListBackups(string filePath)
+    {
+        var result = new List<ConfigBackupEntry>();
+
+        try
+        {
+            string? dir = Path.GetDirectoryName(filePath);
+            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
+                return result;
+
+            string prefix = Path.GetFileName(filePath) + ".";
+
+            foreach (string file in Directory.EnumerateFiles(dir, prefix + "*.bak"))
+            {
+                try
+                {
+                    var info = new FileInfo(file);
+                    result.Add(new ConfigBackupEntry(file, ParseBackupTime(file, prefix, info.LastWriteTime), info.Length));
+                }
+                catch { }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogService.Warn("读取配置备份列表失败：" + ex.Message);
+        }
+
+        return result.OrderByDescending(e => e.Time).ToList();
+    }
+
+    /// <summary>
+    /// 用某个备份还原配置文件。
+    /// 还原前会先把当前文件也备份一次，万一选中了更旧的版本还能退回来。
+    /// </summary>
+    public bool RestoreBackup(string backupPath, string targetPath, out string error)
+    {
+        error = string.Empty;
+
+        try
+        {
+            if (!File.Exists(backupPath))
+            {
+                error = "备份文件已经不存在了。";
+                return false;
+            }
+
+            if (File.Exists(targetPath))
+                Backup(targetPath);
+
+            string? dir = Path.GetDirectoryName(targetPath);
+            if (!string.IsNullOrWhiteSpace(dir))
+                Directory.CreateDirectory(dir);
+
+            File.Copy(backupPath, targetPath, overwrite: true);
+            CleanOldBackups(targetPath);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
+
+    /// <summary>从 _config.yml.20261120-204501.bak 这种文件名里取时间。</summary>
+    private static DateTime ParseBackupTime(string path, string prefix, DateTime fallback)
+    {
+        string name = Path.GetFileName(path);
+
+        if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
+            !name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase))
+            return fallback;
+
+        string stamp = name[prefix.Length..^4];
+
+        // 同一秒内的第二份备份会带 -1 / -2 后缀，解析时间时要去掉
+        int extra = stamp.IndexOf('-', stamp.IndexOf('-') + 1);
+        if (extra > 0)
+            stamp = stamp[..extra];
+
+        return DateTime.TryParseExact(stamp, "yyyyMMdd-HHmmss",
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var time)
+            ? time
+            : fallback;
+    }
+}
+
+/// <summary>一条配置备份记录。</summary>
+/// <param name="FilePath">备份文件路径。</param>
+/// <param name="Time">备份时间（取自文件名）。</param>
+/// <param name="Size">字节数。</param>
+public sealed record ConfigBackupEntry(string FilePath, DateTime Time, long Size)
+{
+    public string TimeDisplay => Time.ToString("yyyy-MM-dd HH:mm:ss");
+    public string SizeDisplay => Size < 1024 ? $"{Size} B" : $"{Size / 1024.0:F1} KB";
 }

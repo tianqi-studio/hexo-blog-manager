@@ -27,6 +27,8 @@
     <Compile Include="..\HexoBlogManager\Services\SecretProtector.cs" />
     <Compile Include="..\HexoBlogManager\Models\GitHubPublishSettings.cs" />
     <Compile Include="..\HexoBlogManager\Services\PostService.cs" />
+    <Compile Include="..\HexoBlogManager\Services\PostBackupService.cs" />
+    <Compile Include="..\HexoBlogManager\Services\LogService.cs" />
     <Compile Include="..\HexoBlogManager\Services\RecycleBin.cs" />
     <Compile Include="..\HexoBlogManager\Services\BlogSiteService.cs" />
     <Compile Include="..\HexoBlogManager\Models\PostMeta.cs" />

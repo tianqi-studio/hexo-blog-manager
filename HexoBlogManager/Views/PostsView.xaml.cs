@@ -111,11 +111,29 @@ public partial class PostsView : UserControl
 
         bool searching = keyword.Trim().Length > 0;
 
-        TxtCount.Text = _allPosts.Count == 0
+        string summary = _allPosts.Count == 0
             ? "还没有文章"
             : searching
                 ? $"共 {_allPosts.Count} 篇 · 匹配 {filtered.Count} 篇"
                 : $"共 {_allPosts.Count} 篇文章 · 双击行可直接编辑";
+
+        // 读取失败的文件不会出现在列表里，必须显式说一声，
+        // 否则用户只会觉得「我明明有 30 篇，怎么只显示 29 篇」
+        int skipped = _service?.LastSkippedFiles.Count ?? 0;
+
+        if (skipped > 0)
+        {
+            summary += $" · {skipped} 个文件读取失败（悬停查看路径）";
+            TxtCount.Foreground = (System.Windows.Media.Brush)FindResource("Brush.Danger");
+            TxtCount.ToolTip = string.Join("\n", _service!.LastSkippedFiles.Take(10));
+        }
+        else
+        {
+            TxtCount.Foreground = (System.Windows.Media.Brush)FindResource("Brush.TextTertiary");
+            TxtCount.ToolTip = null;
+        }
+
+        TxtCount.Text = summary;
 
         if (_allPosts.Count == 0)
             ShowEmptyState("source/_posts 下还没有文章。\n点击右上角「新建文章」开始写第一篇。");

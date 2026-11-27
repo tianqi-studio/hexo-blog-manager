@@ -28,6 +28,26 @@ if (args.Length >= 1 && args[0] == "--serve")
     return 0;
 }
 
+// --touch <博客根目录> <文件名>：对该文章连存两版，生成历史备份（界面截图用）
+if (args.Length >= 3 && args[0] == "--touch")
+{
+    var svc = new PostService(args[1]);
+    var target = svc.LoadAll().FirstOrDefault(p => p.FileName == args[2]);
+
+    if (target is null)
+    {
+        Console.WriteLine("找不到文章：" + args[2]);
+        return 1;
+    }
+
+    string original = target.Body;
+    svc.Save(target, original + "\n");          // 第一版
+    svc.Save(svc.ReadPost(target.FilePath), original);   // 第二版：内容还原
+
+    Console.WriteLine($"已生成 {svc.Backups.List(target.FilePath, target.RelativePath).Count} 份历史备份");
+    return 0;
+}
+
 int pass = 0;
 int fail = 0;
 
@@ -188,6 +208,18 @@ Console.WriteLine("========== 配置自动识别 ==========");
 var (scanPass, scanFail) = SelfTest.ConfigScanTests.Run();
 pass += scanPass;
 fail += scanFail;
+
+Console.WriteLine();
+Console.WriteLine("========== 文章历史备份 ==========");
+var (bakPass, bakFail) = SelfTest.BackupTests.Run();
+pass += bakPass;
+fail += bakFail;
+
+Console.WriteLine();
+Console.WriteLine("========== 配置备份还原 ==========");
+var (cfgBakPass, cfgBakFail) = SelfTest.ConfigBackupTests.Run();
+pass += cfgBakPass;
+fail += cfgBakFail;
 
 Console.WriteLine();
 Console.WriteLine($"===== 合计：通过 {pass} 项，失败 {fail} 项 =====");

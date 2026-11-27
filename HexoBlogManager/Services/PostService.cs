@@ -16,7 +16,18 @@ public sealed class PostService
     public PostService(string blogRoot)
     {
         _blogRoot = blogRoot;
+        Backups = new PostBackupService(blogRoot);
     }
+
+    /// <summary>文章历史备份（编辑器里的「历史版本」直接用这个）。</summary>
+    public PostBackupService Backups { get; }
+
+    /// <summary>
+    /// 上一次 LoadAll 里读取失败、被跳过的文件。
+    /// 单个文件坏掉不该拖垮整个列表，但也不该让用户毫不知情——
+    /// 列表页会用它提示「有 N 篇没读出来」。
+    /// </summary>
+    public IReadOnlyList<string> LastSkippedFiles { get; private set; } = Array.Empty<string>();
 
     /// <summary>source/_posts 的完整路径。</summary>
     public string PostsDirectory => Path.Combine(_blogRoot, "source", "_posts");
@@ -35,6 +46,9 @@ public sealed class PostService
     public List<PostMeta> LoadAll()
     {
         var posts = new List<PostMeta>();
+        var skipped = new List<string>();
+
+        LastSkippedFiles = Array.Empty<string>();
 
         if (!Directory.Exists(PostsDirectory))
             return posts;
@@ -64,11 +78,15 @@ public sealed class PostService
             {
                 posts.Add(ReadPost(file));
             }
-            catch
+            catch (Exception ex)
             {
-                // 单个文件损坏/无权限：跳过，不影响列表
+                // 单个文件损坏/无权限：跳过，不影响列表；但记下来让界面能提示
+                skipped.Add(file);
+                LogService.Warn($"读取文章失败，已跳过：{file}（{ex.Message}）");
             }
         }
+
+        LastSkippedFiles = skipped;
 
         return posts
             .OrderByDescending(p => p.Date ?? DateTime.MinValue)
@@ -123,6 +141,11 @@ public sealed class PostService
     /// <summary>把元信息 + 正文写回文件（UTF-8 无 BOM，符合 Hexo 习惯）。</summary>
     public void Save(PostMeta meta, string body)
     {
+        // 覆盖之前先留一份原文：改坏了、误删了都能退回来。
+        // 备份失败不会阻断保存（内部已吞异常并记日志），保存本身的优先级更高。
+        if (File.Exists(meta.FilePath))
+            Backups.BackupBeforeSave(meta.FilePath, meta.RelativePath);
+
         meta.Body = body ?? string.Empty;
 
         string content = FrontMatter.Build(meta, meta.FrontMatter);

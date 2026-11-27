@@ -157,6 +157,11 @@
                        Text="0 字"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnHistory" Style="{StaticResource Btn.Secondary}"
+                        Content="历史版本" MinWidth="88" Margin="0,0,10,0"
+                        Click="BtnHistory_Click"
+                        Visibility="Collapsed"
+                        ToolTip="查看这篇文章保存前自动留下的副本，可回退"/>
                 <Button x:Name="BtnCancel" Style="{StaticResource Btn.Secondary}"
                         Content="取消" MinWidth="76" Click="BtnCancel_Click"/>
                 <Button x:Name="BtnSave" Style="{StaticResource Btn.Primary}"

@@ -417,6 +417,9 @@
                            Text="正在加载配置…"/>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnHistory" Style="{StaticResource Btn.Secondary}"
+                            Content="历史备份" Margin="0,0,10,0" Click="BtnHistory_Click"
+                            ToolTip="查看并还原每次保存前自动留下的 .bak 文件"/>
                     <Button x:Name="BtnReload" Style="{StaticResource Btn.Secondary}"
                             Content="重新加载" Click="BtnReload_Click"/>
                     <Button x:Name="BtnSave" Style="{StaticResource Btn.Primary}"

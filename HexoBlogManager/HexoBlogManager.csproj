@@ -15,15 +15,22 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Product>Hexo 博客本地管理</Product>
     <AssemblyTitle>Hexo 博客本地管理</AssemblyTitle>
     <Company>Local Tool</Company>
     <Copyright>MIT License, Copyright (c) 2026 tianqi-studio</Copyright>
     <!-- 关闭「把警告当错误」，避免 WPF 生成的中间代码警告阻塞编译 -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- exe 的图标（资源管理器 / 任务栏 / 快捷方式都用它） -->
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- 我们不需要自动生成 assembly 特性文件，保留默认即可 -->
     <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 同一份 ico 作为资源嵌入，供窗口标题栏 / 任务栏使用 -->
+    <Resource Include="app.ico" />
+  </ItemGroup>
 
 </Project>

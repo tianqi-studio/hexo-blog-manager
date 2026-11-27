@@ -106,6 +106,9 @@ public partial class ConfigView : UserControl
     /// <summary>调试用：加载完成后自动执行一次保存（用来验证「没改就不写盘」）。</summary>
     public static bool DebugAutoSave { get; set; }
 
+    /// <summary>调试用：加载完成后自动打开「历史备份」窗口（配合 --screenshot 验证界面）。</summary>
+    public static bool DebugOpenHistory { get; set; }
+
     public ConfigView()
     {
         InitializeComponent();
@@ -358,6 +361,12 @@ public partial class ConfigView : UserControl
         if (DebugAutoSave)
         {
             _ = Dispatcher.BeginInvoke(() => Save(),
+                System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        if (DebugOpenHistory)
+        {
+            _ = Dispatcher.BeginInvoke(() => BtnHistory_Click(this, new RoutedEventArgs()),
                 System.Windows.Threading.DispatcherPriority.Background);
         }
     }
@@ -691,6 +700,31 @@ public partial class ConfigView : UserControl
         }
 
         await LoadAsync(preserveUserEdits: false);
+    }
+
+    /// <summary>
+    /// 打开配置历史备份窗口。
+    /// 还原之后必须重新加载：界面里的内容还是还原前的，此时点保存会把旧内容写回去。
+    /// </summary>
+    private async void BtnHistory_Click(object sender, RoutedEventArgs e)
+    {
+        if (_service is null || _mainPath is null)
+        {
+            SetStatus("还没有加载到配置文件。", isWarning: true);
+            return;
+        }
+
+        var dialog = new ConfigHistoryWindow(_service, _mainPath, _themePath)
+        {
+            Owner = Window.GetWindow(this)
+        };
+
+        if (dialog.ShowDialog() == true && dialog.Restored)
+        {
+            await LoadAsync(preserveUserEdits: false);
+            SetStatus("已还原配置备份。建议到「发布到 GitHub」或「命令控制台」重新生成一次站点，确认效果。",
+                isWarning: true);
+        }
     }
 
     // ==================================================================
@@ -1038,6 +1072,13 @@ public partial class ConfigView : UserControl
 
         return false;
     }
+
+    /// <summary>
+    /// 是否有未保存的修改。
+    /// 主窗口切换页面时靠它判断要不要先问用户一句，
+    /// 否则用户改了半天配置、随手点一下侧栏，改动就没了。
+    /// </summary>
+    public bool HasPendingEdits => HasUnsavedChanges();
 
     private void SetEditable(bool editable)
     {

@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hexo 博客本地管理"
+        Icon="/app.ico"
         Width="1140" Height="740"
         MinWidth="960" MinHeight="620"
         WindowStartupLocation="CenterScreen"
@@ -107,6 +108,15 @@
                                    Foreground="{StaticResource Brush.TextSecondary}"
                                    TextTrimming="CharacterEllipsis"
                                    ToolTipService.ShowDuration="60000"/>
+
+                        <!-- 出错时用户至少能自己找到日志，不用靠口述现象 -->
+                        <Button x:Name="BtnOpenLog" Style="{StaticResource Btn.Ghost}"
+                                Content="打开日志文件夹"
+                                FontSize="11.5" Padding="8,3"
+                                HorizontalAlignment="Left"
+                                Margin="-8,6,0,-3"
+                                Click="BtnOpenLog_Click"
+                                ToolTip="程序异常与启动记录都在这里，反馈问题时附上它"/>
                     </StackPanel>
                 </Border>
             </Grid>

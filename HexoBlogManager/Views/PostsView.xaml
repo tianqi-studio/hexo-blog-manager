@@ -51,6 +51,11 @@
             <Setter Property="ToolTipService.ShowDuration" Value="20000"/>
         </Style>
 
+        <!-- 文件名列：悬停时额外告诉用户文件大小和最后修改时间 -->
+        <Style x:Key="CellFileName" TargetType="TextBlock" BasedOn="{StaticResource CellText}">
+            <Setter Property="ToolTip" Value="{Binding FileInfoDisplay}"/>
+        </Style>
+
         <!-- 行：悬停浅蓝、选中蓝底 -->
         <Style x:Key="GridRow" TargetType="DataGridRow">
             <Setter Property="Background" Value="White"/>
@@ -169,7 +174,7 @@
                                             ElementStyle="{StaticResource CellText}"/>
                         <DataGridTextColumn Header="文件名" Binding="{Binding FileName}"
                                             Width="158"
-                                            ElementStyle="{StaticResource CellText}"/>
+                                            ElementStyle="{StaticResource CellFileName}"/>
                     </DataGrid.Columns>
                 </DataGrid>
 

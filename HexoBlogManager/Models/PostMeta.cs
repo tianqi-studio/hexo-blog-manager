@@ -60,6 +60,13 @@ public sealed class PostMeta
             ? $"{FileSize / 1024.0:F1} KB"
             : $"{FileSize / 1024.0 / 1024.0:F1} MB";
 
+    /// <summary>
+    /// 文件名列的悬停提示：文件名 + 大小 + 最后修改时间。
+    /// 这三项在列表里挤不下（需求定的是 8 列），放在 ToolTip 里最合适。
+    /// </summary>
+    public string FileInfoDisplay =>
+        $"{FileName}\n{SizeDisplay} · 最后修改 {FileModified:yyyy-MM-dd HH:mm}";
+
     /// <summary>搜索匹配：标题、标签、分类、文件名任一命中即算命中（忽略大小写）。</summary>
     public bool Matches(string keyword)
     {

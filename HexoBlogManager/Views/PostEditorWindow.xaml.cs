@@ -34,6 +34,9 @@ public partial class PostEditorWindow : Window
     /// <summary>保存成功后的文件名，供列表页显示提示。</summary>
     public string SavedFileName { get; private set; } = string.Empty;
 
+    /// <summary>调试用：启动后自动打开「历史版本」窗口（配合 --screenshot 验证界面）。</summary>
+    public static bool DebugOpenHistory { get; set; }
+
     // ------------------------------------------------------------------
 
     public PostEditorWindow(string blogRoot) : this(blogRoot, null) { }
@@ -115,6 +118,9 @@ public partial class PostEditorWindow : Window
                 CommentsCheck.IsChecked = _existingPost.Comments;
 
                 Editor.Text = _existingPost.Body.TrimStart('\n');
+
+                // 只有已有文章才有历史可看，新建时隐藏这个按钮
+                BtnHistory.Visibility = Visibility.Visible;
             }
             else
             {
@@ -140,6 +146,91 @@ public partial class PostEditorWindow : Window
 
         TitleBox.Focus();
         TitleBox.SelectAll();
+
+        // 调试用：等布局完成后再弹历史窗口，否则截出来的窗口尺寸可能不对
+        if (DebugOpenHistory && _existingPost is not null)
+        {
+            _ = Dispatcher.BeginInvoke(new Action(() => BtnHistory_Click(this, new RoutedEventArgs())),
+                DispatcherPriority.Background);
+        }
+    }
+
+    // ==================================================================
+    // 历史版本
+    // ==================================================================
+
+    private void BtnHistory_Click(object sender, RoutedEventArgs e)
+    {
+        if (_existingPost is null)
+            return;
+
+        var dialog = new PostHistoryWindow(_postService, _existingPost) { Owner = this };
+
+        if (dialog.ShowDialog() == true && dialog.Restored)
+        {
+            ReloadFromDisk();
+
+            ShowMessage("已恢复到选中的版本。\n\n如果恢复得不合适，再打开「历史版本」还能退回刚才那一份。",
+                "已恢复", MessageBoxImage.Information);
+        }
+    }
+
+    /// <summary>
+    /// 从磁盘重新读取当前文章并刷新界面。
+    /// 恢复历史版本之后必须走这一步：文件已经被替换，界面里还是旧内容，
+    /// 此时再点保存会把恢复的内容又覆盖回去。
+    /// </summary>
+    private void ReloadFromDisk()
+    {
+        if (_existingPost is null)
+            return;
+
+        PostMeta fresh;
+
+        try
+        {
+            fresh = _postService.ReadPost(_existingPost.FilePath);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage($"重新读取文件失败：\n{ex.Message}", "读取失败", MessageBoxImage.Error);
+            return;
+        }
+
+        // 同步到当前对象，保证后续保存基于最新读到的 front-matter，
+        // 而不是恢复之前的那一份
+        _existingPost.Title = fresh.Title;
+        _existingPost.DateText = fresh.DateText;
+        _existingPost.Date = fresh.Date;
+        _existingPost.Updated = fresh.Updated;
+        _existingPost.Tags = fresh.Tags;
+        _existingPost.Categories = fresh.Categories;
+        _existingPost.Top = fresh.Top;
+        _existingPost.Comments = fresh.Comments;
+        _existingPost.Body = fresh.Body;
+        _existingPost.FrontMatter = fresh.FrontMatter;
+
+        _loading = true;
+
+        try
+        {
+            TitleBox.Text = fresh.Title;
+            DateBox.Text = (fresh.Date ?? DateTime.Now).ToString("yyyy-MM-dd HH:mm:ss");
+            TagsBox.Text = string.Join(", ", fresh.Tags);
+            CategoriesBox.Text = string.Join(", ", fresh.Categories);
+            TopCheck.IsChecked = fresh.Top;
+            CommentsCheck.IsChecked = fresh.Comments;
+
+            Editor.Text = fresh.Body.TrimStart('\n');
+            TxtStatus.Text = $"{Editor.Text.Length} 字";
+        }
+        finally
+        {
+            _loading = false;
+            _dirty = false;   // 界面内容与磁盘一致，不再算「未保存」
+        }
+
+        UpdatePreview();
     }
 
     // ==================================================================

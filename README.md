@@ -11,6 +11,7 @@
 ### 1. 博客目录管理
 - 选择 Hexo 博客根目录，自动校验 `_config.yml` 与 `source/_posts` 是否存在
 - 记住上次的路径，下次打开自动加载
+- 「最近打开」菜单列出用过的博客目录，一键切换（目录不存在也会列出来，点了给明确提示）
 - 选到 `source` 子目录这类常见错误时，直接告诉你正确的根目录在哪
 - 中文路径、带空格路径全部支持（内部统一用 `cmd.exe /c "chcp 65001>nul && 命令"` + Unicode 工作目录）
 - 启动自检 Node / hexo-cli / 博客内 hexo 版本
@@ -26,6 +27,7 @@
 - 左侧编辑、右侧实时预览（自写 Markdown → FlowDocument 渲染器，支持标题、代码块、行内代码、列表、引用、链接、图片）
 - 拖拽图片到编辑器，自动转存到 `source/images/yyyy/MM/` 并插入链接
 - 删除走 **Windows 回收站**，不是直接抹掉
+- **保存前自动留一份原文**：存在博客根目录的 `.hexo-manager/backups/posts/`，每篇保留最近 10 份，编辑器里点「历史版本」可回退，恢复前也会先把当前内容备份一次
 
 ![编辑器](docs/screenshots/03-editor.png)
 
@@ -47,6 +49,7 @@
 - 评论系统支持切到 **giscus**，参数（repo / repo_id / category_id）在界面里填，缺失的配置段会自动创建；遇到 Valine / Waline 等其他系统会标成「保持原样」，保存不会把它抹掉
 - 采用「点路径 + 行级改写」而不是「解析 → 序列化」，注释、字段顺序、缩进一个字节都不动
 - 保存前自动备份为 `_config.yml.yyyyMMdd-HHmmss.bak`，最多保留 10 份
+- 「历史备份」里可以查看两个配置文件的全部备份并一键还原；还原前会先备份当前文件，还原后自动重新加载表单
 
 ![配置自动识别](docs/screenshots/07-config.png)
 
@@ -71,7 +74,7 @@
 
 ## 下载使用
 
-到 [Releases](../../releases) 下载 `HexoBlogManager-v1.0.0-win-x64.zip`，解压后双击 `HexoBlogManager.exe`。
+到 [Releases](../../releases) 下载 `HexoBlogManager-v1.2.0-win-x64.zip`，解压后双击 `HexoBlogManager.exe`。
 
 首次启动先在「站点与目录」里选择你的 Hexo 博客根目录，其余页面会自动跟上。
 
@@ -106,10 +109,12 @@ HexoBlogManager/
 │   ├─ FrontMatter.cs          front-matter 解析与保真重建
 │   ├─ MarkdownRenderer.cs     Markdown → FlowDocument
 │   ├─ RecycleBin.cs           删除到回收站（SHFileOperation）
+│   ├─ PostBackupService.cs    文章历史备份与回退
+│   ├─ LogService.cs           运行日志（异常与启动记录落盘）
 │   ├─ YamlPathEditor.cs       点路径行级读写 YAML（写入）
 │   ├─ YamlFlatReader.cs       容错型 YAML 扁平解析（读取，坏行只警告不中断）
 │   ├─ BlogConfigScanner.cs    配置文件自动检测 / 优先级合并 / 字段来源追踪
-│   ├─ ConfigService.cs        配置文件定位 / 备份
+│   ├─ ConfigService.cs        配置文件定位 / 备份 / 备份列表与还原
 │   ├─ SecretProtector.cs      DPAPI 加解密 Token
 │   ├─ GitHubApi.cs            GitHub REST API（仓库 / Pages）
 │   ├─ GitHubPublisher.cs      一键发布主流程
@@ -140,7 +145,7 @@ _selftest/            回归测试（链接主项目源文件，不需要 WPF）
 ```bash
 cd _selftest
 dotnet run
-# ===== 合计：通过 176 项，失败 0 项 =====
+# ===== 合计：通过 207 项，失败 0 项 =====
 ```
 
 > 自检会用到 `D:\testblog` 这个本地测试博客（Hexo 8 + Butterfly 5.7.2），路径写在 `_selftest/Program.cs` 顶部，可以改成你自己的。
